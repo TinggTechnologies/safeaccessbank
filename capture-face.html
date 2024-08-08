@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Capture</title>
+    <style>
+        video, canvas, img {
+            display: block;
+            margin: 0 auto;
+        }
+        img {
+            margin-top: 20px;
+            max-width: 640px;
+            max-height: 480px;
+        }
+    </style>
+</head>
+<body>
+    <video id="video" width="640" height="480" autoplay></video>
+    <button id="capture">Capture</button>
+    <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+    <img id="capturedFace" src="" alt="Captured Face">
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const captureButton = document.getElementById('capture');
+        const capturedFace = document.getElementById('capturedFace');
+
+        // Get access to the camera
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+                video.srcObject = stream;
+                video.play();
+            });
+        }
+
+        captureButton.addEventListener('click', () => {
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, 640, 480);
+            const dataURL = canvas.toDataURL('image/png');
+            
+            fetch('http://localhost:5000/capture_face', {
+                method: 'POST',
+                body: JSON.stringify({ image: dataURL }),
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                if(data.status === "success") {
+                    alert("Face captured and saved: " + data.filename);
+                    // Update the src of the img tag to display the captured face
+                    capturedFace.src = data.filename;
+                    location.href = "registration/registration_img1.php";
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    </script>
+</body>
+</html>

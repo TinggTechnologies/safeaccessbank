@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  web:
+    image: php:7.4-apache
+    container_name: safeaccessbank
+    volumes:
+      - ./web:/var/www/html
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+    environment:
+      - APACHE_RUN_USER=#1000
+      - APACHE_RUN_GROUP=#1000
+
+  db:
+    image: mysql:5.7
+    container_name: safeaccessbank
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: exampledb
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: safeaccessbank
+    restart: always
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: example
+
+volumes:
+  db_data:

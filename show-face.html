@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automatic Face Detection</title>
+    <style>
+        video, canvas {
+            display: block;
+            margin: 0 auto;
+        }
+        video, canvas {
+            max-width: 640px;
+            max-height: 480px;
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none; /* Ensures that canvas does not capture mouse events */
+        }
+        #container {
+            position: relative;
+        }
+        #status {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: green;
+            font-size: 24px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <video id="video" width="640" height="480" autoplay></video>
+        <canvas id="canvas" width="640" height="480"></canvas>
+        <div id="status">No Face Detected</div>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        const status = document.getElementById('status');
+
+        // Get access to the camera
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+                video.srcObject = stream;
+                video.play();
+            });
+        }
+
+        video.addEventListener('play', () => {
+            const detectFace = () => {
+                if (video.paused || video.ended) return;
+                
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const dataURL = canvas.toDataURL('image/png');
+                
+                fetch('http://localhost:5000/capture_face', {
+                    method: 'POST',
+                    body: JSON.stringify({ image: dataURL }),
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        status.textContent = "Face Detected";
+                        status.style.color = "green";
+                        location.href = 'log_in/log_img1.php';
+                    } else {
+                        status.textContent = "No Face Detected";
+                        status.style.color = "red";
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+                
+                setTimeout(detectFace, 500); // Adjust the interval as needed
+            };
+
+            detectFace();
+        });
+    </script>
+</body>
+</html>
